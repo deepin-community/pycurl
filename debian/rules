@@ -1,0 +1,65 @@
+#! /usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+PY3VERS := $(shell py3versions -vs)
+CURLVERS := $(strip $(shell /usr/bin/curl-config --version | awk '{print $$2}'))
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+DO_PACKAGES = $(shell dh_listpackages)
+
+%:
+	dh $@ --with python3
+
+override_dh_auto_build:
+	$(MAKE) gen PYTHON=python3
+	for py in $(PY3VERS) ; do \
+		python$$py setup.py build ; \
+	done
+	mkdir -p www/htdocs/doc
+ifneq (,$(filter python-pycurl-doc,$(DO_PACKAGES)))
+	$(MAKE) docs PYTHON=python3
+endif
+
+override_dh_auto_test:
+ifeq ($(filter nocheck,$(DEB_BUILD_OPTIONS)),)
+	for py in $(PY3VERS) ; do \
+		make test PYTHON=python$$py PYTEST=pytest-3 PYTEST_ADDOPTS="--ignore examples -m 'not online'" PYFLAKES=pyflakes3 PYCURL_VSFTPD_PATH=vsftpd; \
+	done
+endif
+
+override_dh_auto_install:
+	for py in $(PY3VERS); do \
+		python$$py setup.py install --root=$(CURDIR)/debian/python3-pycurl --install-layout=deb; \
+	done
+
+	# Remove documentation as installed by setup.py
+	rm -rf $(CURDIR)/debian/python*-pycurl*/usr/share/doc/pycurl
+
+override_dh_installdocs:
+	mkdir -p debian/python-pycurl-doc/usr/share/doc/python-pycurl-doc/html
+ifneq (,$(filter python-pycurl-doc,$(DO_PACKAGES)))
+	cp -a build/doc/* $(CURDIR)/debian/python-pycurl-doc/usr/share/doc/python-pycurl-doc/html
+endif
+	dh_installdocs -ppython3-pycurl --link-doc=python3-pycurl
+	dh_installdocs -Npython3-pycurl
+
+override_dh_installchangelogs:
+	dh_installchangelogs ChangeLog
+
+override_dh_strip:
+ifeq (,$(filter nostrip,$(DEB_BUILD_OPTIONS)))
+	dh_strip -ppython3-pycurl --dbgsym-migration='python3-pycurl-dbg (<< 7.44.1-2~)'
+endif
+
+override_dh_compress:
+	dh_compress -X.py
+
+override_dh_shlibdeps:
+	dh_shlibdeps -a
+	sed -i '/shlibs:Depends/s,\(libcurl[0-9]*-gnutls (>= \)[^)]*\().*\),\1$(CURLVERS)\2,' debian/python3-pycurl*.substvars
