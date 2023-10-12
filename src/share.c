@@ -11,7 +11,7 @@ static void
 assert_share_state(const CurlShareObject *self)
 {
     assert(self != NULL);
-    assert(Py_TYPE(self) == p_CurlShare_Type);
+    assert(PyObject_IsInstance((PyObject *) self, (PyObject *) p_CurlShare_Type) == 1);
 #ifdef WITH_THREAD
     assert(self->lock != NULL);
 #endif
@@ -38,7 +38,7 @@ do_share_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 #endif
     int *ptr;
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "", empty_keywords)) {
+    if (subtype == p_CurlShare_Type && !PyArg_ParseTupleAndKeywords(args, kwds, "", empty_keywords)) {
         return NULL;
     }
 
@@ -119,7 +119,7 @@ PYCURL_INTERNAL void
 do_share_dealloc(CurlShareObject *self)
 {
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self);
+    CPy_TRASHCAN_BEGIN(self, do_share_dealloc);
 
     Py_CLEAR(self->dict);
     util_share_close(self);
@@ -133,7 +133,7 @@ do_share_dealloc(CurlShareObject *self)
     }
      
     CurlShare_Type.tp_free(self);
-    Py_TRASHCAN_SAFE_END(self);
+    CPy_TRASHCAN_END(self);
 }
 
 
@@ -186,6 +186,9 @@ do_curlshare_setopt(CurlShareObject *self, PyObject *args)
         case CURL_LOCK_DATA_SSL_SESSION:
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 57, 0)
         case CURL_LOCK_DATA_CONNECT:
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 61, 0)
+        case CURL_LOCK_DATA_PSL:
 #endif
             break;
         default:

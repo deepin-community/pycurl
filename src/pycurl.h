@@ -220,6 +220,9 @@ pycurl_inet_ntop (int family, void *addr, char *string, size_t string_size);
 #   define PYCURL_NEED_MBEDTLS_TSL
 #   define COMPILE_SSL_LIB "mbedtls"
 #   define COMPILE_SUPPORTED_SSL_BACKEND_FOUND 1
+# elif defined(HAVE_CURL_SECTRANSP)
+#   define COMPILE_SSL_LIB "secure-transport"
+#   define COMPILE_SUPPORTED_SSL_BACKEND_FOUND 1
 # else
 #  ifdef _MSC_VER
     /* sigh */
@@ -237,7 +240,7 @@ pycurl_inet_ntop (int family, void *addr, char *string, size_t string_size);
     * no reason to require users match those */
 #  define COMPILE_SSL_LIB "none/other"
 #  define COMPILE_SUPPORTED_SSL_BACKEND_FOUND 0
-# endif /* HAVE_CURL_OPENSSL || HAVE_CURL_WOLFSSL || HAVE_CURL_GNUTLS || HAVE_CURL_NSS || HAVE_CURL_MBEDTLS */
+# endif /* HAVE_CURL_OPENSSL || HAVE_CURL_WOLFSSL || HAVE_CURL_GNUTLS || HAVE_CURL_NSS || HAVE_CURL_MBEDTLS || HAVE_CURL_SECTRANSP */
 #else
 # define COMPILE_SSL_LIB "none/other"
 # define COMPILE_SUPPORTED_SSL_BACKEND_FOUND 0
@@ -263,6 +266,19 @@ PYCURL_INTERNAL void pycurl_ssl_cleanup(void);
 #  define PYCURL_END_ALLOW_THREADS \
        Py_END_ALLOW_THREADS \
        self->state = NULL;
+#  define PYCURL_BEGIN_ALLOW_THREADS_EASY \
+       if (self->multi_stack == NULL) { \
+           self->state = PyThreadState_Get(); \
+           assert(self->state != NULL); \
+       } else { \
+           self->multi_stack->state = PyThreadState_Get(); \
+           assert(self->multi_stack->state != NULL); \
+       } \
+       Py_BEGIN_ALLOW_THREADS
+#  define PYCURL_END_ALLOW_THREADS_EASY \
+       PYCURL_END_ALLOW_THREADS \
+       if (self->multi_stack != NULL) \
+           self->multi_stack->state = NULL;
 #else
 #  define PYCURL_DECLARE_THREAD_STATE
 #  define PYCURL_ACQUIRE_THREAD() (1)
@@ -318,6 +334,10 @@ PyText_Check(PyObject *o);
 PYCURL_INTERNAL PyObject *
 PyText_FromString_Ignore(const char *string);
 
+/* Py_NewRef and Py_XNewRef - not part of Python's C API before 3.10 */
+static inline PyObject* my_Py_NewRef(PyObject *obj) { Py_INCREF(obj); return obj; }
+static inline PyObject* my_Py_XNewRef(PyObject *obj) { Py_XINCREF(obj); return obj; }
+
 struct CurlObject;
 
 PYCURL_INTERNAL void
@@ -371,15 +391,29 @@ create_and_set_error_object(struct CurlObject *self, int code);
 #define PYCURL_MEMGROUP_POSTFIELDS      64
 /* CA certs object */
 #define PYCURL_MEMGROUP_CACERTS         128
+/* Curl slist objects */
+#define PYCURL_MEMGROUP_SLIST           256
 
 #define PYCURL_MEMGROUP_EASY \
     (PYCURL_MEMGROUP_CALLBACK | PYCURL_MEMGROUP_FILE | \
     PYCURL_MEMGROUP_HTTPPOST | PYCURL_MEMGROUP_POSTFIELDS | \
-    PYCURL_MEMGROUP_CACERTS)
+    PYCURL_MEMGROUP_CACERTS | PYCURL_MEMGROUP_SLIST)
 
 #define PYCURL_MEMGROUP_ALL \
     (PYCURL_MEMGROUP_ATTRDICT | PYCURL_MEMGROUP_EASY | \
     PYCURL_MEMGROUP_MULTI | PYCURL_MEMGROUP_SHARE)
+
+typedef struct CurlSlistObject {
+    PyObject_HEAD
+    struct curl_slist *slist;
+} CurlSlistObject;
+
+typedef struct CurlHttppostObject {
+    PyObject_HEAD
+    struct curl_httppost *httppost;
+    /* List of INC'ed references associated with httppost. */
+    PyObject *reflist;
+} CurlHttppostObject;
 
 typedef struct CurlObject {
     PyObject_HEAD
@@ -392,26 +426,24 @@ typedef struct CurlObject {
 #endif
     struct CurlMultiObject *multi_stack;
     struct CurlShareObject *share;
-    struct curl_httppost *httppost;
-    /* List of INC'ed references associated with httppost. */
-    PyObject *httppost_ref_list;
-    struct curl_slist *httpheader;
+    struct CurlHttppostObject *httppost;
+    struct CurlSlistObject *httpheader;
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 37, 0)
-    struct curl_slist *proxyheader;
+    struct CurlSlistObject *proxyheader;
 #endif
-    struct curl_slist *http200aliases;
-    struct curl_slist *quote;
-    struct curl_slist *postquote;
-    struct curl_slist *prequote;
-    struct curl_slist *telnetoptions;
+    struct CurlSlistObject *http200aliases;
+    struct CurlSlistObject *quote;
+    struct CurlSlistObject *postquote;
+    struct CurlSlistObject *prequote;
+    struct CurlSlistObject *telnetoptions;
 #ifdef HAVE_CURLOPT_RESOLVE
-    struct curl_slist *resolve;
+    struct CurlSlistObject *resolve;
 #endif
 #ifdef HAVE_CURL_7_20_0_OPTS
-    struct curl_slist *mail_rcpt;
+    struct CurlSlistObject *mail_rcpt;
 #endif
 #ifdef HAVE_CURLOPT_CONNECT_TO
-    struct curl_slist *connect_to;
+    struct CurlSlistObject *connect_to;
 #endif
     /* callbacks */
     PyObject *w_cb;
@@ -558,6 +590,11 @@ util_curl_xdecref(CurlObject *self, int flags, CURL *handle);
 PYCURL_INTERNAL PyObject *
 do_curl_setopt_filelike(CurlObject *self, int option, PyObject *obj);
 
+PYCURL_INTERNAL void
+util_curlslist_update(CurlSlistObject **old, struct curl_slist *slist);
+PYCURL_INTERNAL void
+util_curlhttppost_update(CurlObject *obj, struct curl_httppost *httppost, PyObject *reflist);
+
 PYCURL_INTERNAL PyObject *
 do_curl_getinfo_raw(CurlObject *self, PyObject *args);
 #if PY_MAJOR_VERSION >= 3
@@ -619,11 +656,15 @@ ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *ptr);
 #if !defined(PYCURL_SINGLE_FILE)
 /* Type objects */
 extern PyTypeObject Curl_Type;
+extern PyTypeObject CurlSlist_Type;
+extern PyTypeObject CurlHttppost_Type;
 extern PyTypeObject CurlMulti_Type;
 extern PyTypeObject CurlShare_Type;
 
 extern PyObject *ErrorObject;
 extern PyTypeObject *p_Curl_Type;
+extern PyTypeObject *p_CurlSlist_Type;
+extern PyTypeObject *p_CurlHttppost_Type;
 extern PyTypeObject *p_CurlMulti_Type;
 extern PyTypeObject *p_CurlShare_Type;
 extern PyObject *khkey_type;
@@ -647,9 +688,17 @@ extern PyMethodDef curlmultiobject_methods[];
 #endif /* !PYCURL_SINGLE_FILE */
 
 #if PY_MAJOR_VERSION >= 3
-# define PYCURL_TYPE_FLAGS Py_TPFLAGS_HAVE_GC
+# define PYCURL_TYPE_FLAGS Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE
 #else
-# define PYCURL_TYPE_FLAGS Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_WEAKREFS
+# define PYCURL_TYPE_FLAGS Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_WEAKREFS | Py_TPFLAGS_BASETYPE
+#endif
+
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 8
+# define CPy_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_BEGIN(op, dealloc)
+# define CPy_TRASHCAN_END(op) Py_TRASHCAN_END
+#else
+# define CPy_TRASHCAN_BEGIN(op, dealloc) Py_TRASHCAN_SAFE_BEGIN(op)
+# define CPy_TRASHCAN_END(op) Py_TRASHCAN_SAFE_END(op)
 #endif
 
 /* vi:ts=4:et:nowrap

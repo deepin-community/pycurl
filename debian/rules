@@ -6,6 +6,8 @@
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
+include /usr/share/dpkg/architecture.mk
+
 PY3VERS := $(shell py3versions -vs)
 CURLVERS := $(strip $(shell /usr/bin/curl-config --version | awk '{print $$2}'))
 
@@ -13,8 +15,12 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 DO_PACKAGES = $(shell dh_listpackages)
 
+ifneq ($(DEB_BUILD_ARCH),$(DEB_HOST_ARCH))
+export _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__$(DEB_HOST_MULTIARCH)
+endif
+
 %:
-	dh $@ --with python3
+	dh $@
 
 override_dh_auto_build:
 	$(MAKE) gen PYTHON=python3
@@ -28,8 +34,9 @@ endif
 
 override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_OPTIONS)),)
+	set -e ;\
 	for py in $(PY3VERS) ; do \
-		make test PYTHON=python$$py PYTEST=pytest-3 PYTEST_ADDOPTS="--ignore examples -m 'not online'" PYFLAKES=pyflakes3 PYCURL_VSFTPD_PATH=vsftpd; \
+		make test PYTHON=python$$py PYTEST="python$$py -m pytest" PYTEST_ADDOPTS="--ignore examples --ignore .pc -m 'not online'" PYFLAKES="python$$py -m pyflakes" PYCURL_VSFTPD_PATH=vsftpd; \
 	done
 endif
 

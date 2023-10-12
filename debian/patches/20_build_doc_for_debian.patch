@@ -15,9 +15,9 @@ diff --git a/Makefile b/Makefile
 index bcb13e8..dfe62cf 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -148,7 +148,7 @@ docs: build
- 	PYTHONSUFFIX=$$($(PYTHON) -V 2>&1 |awk '{print $$2}' |awk -F. '{print $$1 "." $$2}') && \
- 	PYTHONPATH=$$(ls -d build/lib.*$$PYTHONSUFFIX):$$PYTHONPATH \
+@@ -149,7 +149,7 @@ docs: build
+ 	for file in doc/docstrings/*.rst; do tail -n +3 $$file >build/docstrings/`basename $$file`; done
+ 	PYTHONPATH=$$(ls -d build/lib.*$$PYTHONMAJOR*$$PYTHONMINOR):$$PYTHONPATH \
  	$(PYTHON) -m sphinx doc build/doc
 -	cp ChangeLog build/doc
 +	rst2html README.rst build/doc/README.html

@@ -3,6 +3,7 @@
 
 extern const char curl_doc[];
 extern const char curl_close_doc[];
+extern const char curl_duphandle_doc[];
 extern const char curl_errstr_doc[];
 extern const char curl_errstr_raw_doc[];
 extern const char curl_getinfo_doc[];

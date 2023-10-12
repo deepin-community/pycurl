@@ -1,3 +1,5 @@
 0001-tests-Don-t-use-proxy-when-testing-connection-to-1.patch
 20_build_doc_for_debian.patch
 0004-Removed-privacy-breach-in-docs.patch
+drop_http3_test.patch
+0886881d9536315e6a051c04e2b5731bdb445779.patch

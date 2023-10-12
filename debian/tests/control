@@ -1,8 +1,15 @@
-# -*- sh -*-
-# pycurl apparently does not export its package version.
-
 Test-Command: python3 -c "import curl; print(curl.__file__)"
 
 Tests: livetest.sh
-Depends: @, build-essential, ca-certificates, libcurl4-gnutls-dev, pyflakes3, python3-all, python3-bottle, python3-flaky, python3-pytest, vsftpd
+Depends: build-essential,
+         ca-certificates,
+         libcurl4-gnutls-dev,
+         python3-all,
+         python3-bottle,
+         python3-flaky,
+         python3-pyflakes,
+         python3-pytest,
+         python3-setuptools,
+         vsftpd,
+         @
 Restrictions: allow-stderr

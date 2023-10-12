@@ -1,0 +1,7 @@
+.pytest_cache/
+tests/fake-curl/libcurl/with_gnutls.so
+tests/fake-curl/libcurl/with_nss.so
+tests/fake-curl/libcurl/with_openssl.so
+tests/fake-curl/libcurl/with_unknown_ssl.so
+tests/fake-curl/libcurl/without_ssl.so
+tests/tmp/upload.txt
