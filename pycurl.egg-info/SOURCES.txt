@@ -7,6 +7,7 @@ MANIFEST.in
 Makefile
 README.rst
 RELEASE-NOTES.rst
+pytest.ini
 requirements-dev.txt
 setup.py
 winbuild.py
@@ -30,6 +31,7 @@ doc/unicode.rst
 doc/unimplemented.rst
 doc/docstrings/curl.rst
 doc/docstrings/curl_close.rst
+doc/docstrings/curl_duphandle.rst
 doc/docstrings/curl_errstr.rst
 doc/docstrings/curl_errstr_raw.rst
 doc/docstrings/curl_getinfo.rst
@@ -123,6 +125,7 @@ tests/close_socket_cb_test.py
 tests/curl_object_test.py
 tests/debug_test.py
 tests/default_write_cb_test.py
+tests/duphandle_test.py
 tests/error_constants_test.py
 tests/error_test.py
 tests/failonerror_test.py
@@ -137,6 +140,7 @@ tests/info_test.py
 tests/internals_test.py
 tests/matrix.py
 tests/memory_mgmt_test.py
+tests/multi_callback_test.py
 tests/multi_memory_mgmt_test.py
 tests/multi_option_constants_test.py
 tests/multi_socket_select_test.py
@@ -169,6 +173,7 @@ tests/setup_test.py
 tests/share_test.py
 tests/sockopt_cb_test.py
 tests/ssh_key_cb_test.py
+tests/subclass_test.py
 tests/unset_range_test.py
 tests/user_agent_string_test.py
 tests/util.py

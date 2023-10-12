@@ -1,0 +1,19 @@
+From 0886881d9536315e6a051c04e2b5731bdb445779 Mon Sep 17 00:00:00 2001
+From: Scott Talbert <swt@techie.net>
+Date: Thu, 24 Aug 2023 16:51:21 -0400
+Subject: [PATCH] Add missing shebang to tests/ext/test-suite.sh
+
+---
+ tests/ext/test-suite.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/ext/test-suite.sh b/tests/ext/test-suite.sh
+index 4b1c9a690..55bbade4a 100755
+--- a/tests/ext/test-suite.sh
++++ b/tests/ext/test-suite.sh
+@@ -1,4 +1,4 @@
+-# 
++#!/bin/sh
+ 
+ dir=$(dirname "$0")
+ 

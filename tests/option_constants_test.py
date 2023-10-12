@@ -241,7 +241,7 @@ class OptionConstantsTest(unittest.TestCase):
         curl.close()
 
     @util.min_libcurl(7, 42, 0)
-    @util.only_ssl_backends('nss')
+    @util.only_ssl_backends('nss', 'secure-transport')
     def test_ssl_falsestart(self):
         curl = pycurl.Curl()
         curl.setopt(curl.SSL_FALSESTART, 1)
@@ -263,7 +263,7 @@ class OptionConstantsTest(unittest.TestCase):
         curl.setopt(curl.ISSUERCERT, '/bogus-issuercert')
         curl.close()
 
-    @util.only_ssl
+    @util.only_ssl_backends('openssl', 'gnutls', 'nss')
     def test_capath(self):
         curl = pycurl.Curl()
         curl.setopt(curl.CAPATH, '/bogus-capath')
@@ -271,7 +271,7 @@ class OptionConstantsTest(unittest.TestCase):
 
     # CURLOPT_PROXY_CAPATH was introduced in libcurl-7.52.0
     @util.min_libcurl(7, 52, 0)
-    @util.only_ssl
+    @util.only_ssl_backends('openssl', 'gnutls', 'nss')
     def test_proxy_capath(self):
         curl = pycurl.Curl()
         curl.setopt(curl.PROXY_CAPATH, '/bogus-capath')
@@ -331,7 +331,7 @@ class OptionConstantsTest(unittest.TestCase):
         curl.setopt(curl.RANDOM_FILE, '/bogus-random')
         curl.close()
 
-    @util.only_ssl_backends('openssl', 'gnutls')
+    @util.only_ssl_backends('openssl', 'gnutls', 'secure-transport')
     def test_egdsocket(self):
         curl = pycurl.Curl()
         curl.setopt(curl.EGDSOCKET, '/bogus-egdsocket')
@@ -371,6 +371,26 @@ class OptionConstantsTest(unittest.TestCase):
     def test_ssl_option_no_revoke(self):
         curl = pycurl.Curl()
         curl.setopt(curl.SSL_OPTIONS, curl.SSLOPT_NO_REVOKE)
+        curl.close()
+
+    @util.min_libcurl(7, 64, 0)
+    def test_http09_allowed_option(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.HTTP09_ALLOWED, 1)
+        curl.close()
+
+    @util.min_libcurl(7, 61, 0)
+    @util.only_ssl_backends('openssl')
+    def test_tls13_ciphers(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.TLS13_CIPHERS, 'TLS_CHACHA20_POLY1305_SHA256')
+        curl.close()
+
+    @util.min_libcurl(7, 61, 0)
+    @util.only_ssl_backends('openssl')
+    def test_proxy_tls13_ciphers(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_TLS13_CIPHERS, 'TLS_CHACHA20_POLY1305_SHA256')
         curl.close()
 
 class OptionConstantsSettingTest(unittest.TestCase):
@@ -475,6 +495,10 @@ class OptionConstantsSettingTest(unittest.TestCase):
     @pytest.mark.http2
     def test_http_version_2prior_knowledge(self):
         self.curl.setopt(self.curl.HTTP_VERSION, self.curl.CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE)
+
+    @util.min_libcurl(7, 66, 0)
+    def test_http_version_3(self):
+        self.curl.setopt(self.curl.HTTP_VERSION, self.curl.CURL_HTTP_VERSION_3)
 
     @util.min_libcurl(7, 21, 5)
     def test_sockopt_constants(self):

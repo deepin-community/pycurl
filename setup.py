@@ -6,17 +6,11 @@
 
 PACKAGE = "pycurl"
 PY_PACKAGE = "curl"
-VERSION = "7.44.1"
+VERSION = "7.45.2"
 
-import glob, os, re, sys, subprocess
-import distutils
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
-from distutils.extension import Extension
-from distutils.util import split_quoted
-from distutils.version import LooseVersion
+import glob, os, re, shlex, sys, subprocess
+from setuptools import setup
+from setuptools.extension import Extension
 
 py3 = sys.version_info[0] == 3
 
@@ -128,7 +122,7 @@ class ExtensionConfiguration(object):
                 msg += ":\n" + stderr.decode()
             raise ConfigurationError(msg)
         curl_has_ssl = False
-        for feature in split_quoted(stdout.decode()):
+        for feature in shlex.split(stdout.decode()):
             if feature == 'SSL':
                 # this means any ssl library, not just openssl.
                 # we set the ssl flag to check for ssl library mismatch
@@ -145,6 +139,7 @@ class ExtensionConfiguration(object):
             '--with-gnutls': self.using_gnutls,
             '--with-nss': self.using_nss,
             '--with-mbedtls': self.using_mbedtls,
+            '--with-sectransp': self.using_sectransp,
         }
 
     def detect_ssl_option(self):
@@ -162,7 +157,7 @@ class ExtensionConfiguration(object):
 
         if 'PYCURL_SSL_LIBRARY' in os.environ:
             ssl_lib = os.environ['PYCURL_SSL_LIBRARY']
-            if ssl_lib in ['openssl', 'wolfssl', 'gnutls', 'nss', 'mbedtls']:
+            if ssl_lib in ['openssl', 'wolfssl', 'gnutls', 'nss', 'mbedtls', 'sectransp']:
                 ssl_lib_detected = ssl_lib
                 getattr(self, 'using_%s' % ssl_lib)()
             else:
@@ -184,7 +179,7 @@ class ExtensionConfiguration(object):
 
         if not ssl_lib_detected:
             # self.sslhintbuf is a hack
-            for arg in split_quoted(self.sslhintbuf):
+            for arg in shlex.split(self.sslhintbuf):
                 if arg[:2] == "-l":
                     if arg[2:] == 'ssl':
                         self.using_openssl()
@@ -253,7 +248,7 @@ class ExtensionConfiguration(object):
             if stderr:
                 msg += ":\n" + stderr.decode()
             raise ConfigurationError(msg)
-        for arg in split_quoted(stdout.decode()):
+        for arg in shlex.split(stdout.decode()):
             if arg[:2] == "-I":
                 # do not add /usr/include
                 if not re.search(r"^\/+usr\/+include\/*$", arg[2:]):
@@ -279,7 +274,7 @@ class ExtensionConfiguration(object):
         # for hints as to which SSL library libcurl is linked against.
         # More information: https://github.com/pycurl/pycurl/pull/147
         #
-        # The final point is we should link agaist the SSL library in use
+        # The final point is we should link against the SSL library in use
         # even if libcurl does not tell us to, because *we* invoke functions
         # in that SSL library. This means any SSL libraries found in
         # --static-libs are forwarded to our libraries.
@@ -326,15 +321,16 @@ class ExtensionConfiguration(object):
                 sys.stderr.write('''\
 Warning: libcurl is configured to use SSL, but we have not been able to \
 determine which SSL backend it is using. If your Curl is built against \
-OpenSSL, LibreSSL, BoringSSL, GnuTLS, NSS or mbedTLS please specify the SSL backend \
-manually. For other SSL backends please ignore this message.''')
+OpenSSL, LibreSSL, BoringSSL, GnuTLS, NSS, mbedTLS, or Secure Transport \
+please specify the SSL backend manually. For other SSL backends please \
+ignore this message.''')
         else:
             if self.detect_ssl_option():
                 sys.stderr.write("Warning: SSL backend specified manually but libcurl does not use SSL\n")
 
         # libraries and options - all libraries and options are forwarded
         # but if --libs succeeded, --static-libs output is ignored
-        for arg in split_quoted(optbuf):
+        for arg in shlex.split(optbuf):
             if arg[:2] == "-l":
                 self.libraries.append(arg[2:])
             elif arg[:2] == "-L":
@@ -371,6 +367,9 @@ manually. For other SSL backends please ignore this message.''')
         elif ssl_version.startswith('mbedTLS/'):
             self.using_mbedtls()
             ssl_lib_detected = 'mbedtls'
+        elif ssl_version.startswith('SecureTransport'):
+            self.using_sectransp()
+            ssl_lib_detected = 'sectransp'
         return ssl_lib_detected
 
     def detect_ssl_lib_on_centos6_plus(self):
@@ -411,6 +410,10 @@ manually. For other SSL backends please ignore this message.''')
         return ssl_lib_detected
 
     def configure_windows(self):
+        OPENSSL_DIR = scan_argv(self.argv, "--openssl-dir=")
+        if OPENSSL_DIR is not None:
+            self.include_dirs.append(os.path.join(OPENSSL_DIR, "include"))
+            self.library_dirs.append(os.path.join(OPENSSL_DIR, "lib"))
         # Windows users have to pass --curl-dir parameter to specify path
         # to libcurl, because there is no curl-config on windows at all.
         curl_dir = scan_argv(self.argv, "--curl-dir=")
@@ -572,45 +575,17 @@ manually. For other SSL backends please ignore this message.''')
         self.define_macros.append(('HAVE_CURL_SSL', 1))
         self.ssl_lib_detected = 'mbedtls'
 
-def get_bdist_msi_version_hack():
-    # workaround for distutils/msi version requirement per
-    # epydoc.sourceforge.net/stdlib/distutils.version.StrictVersion-class.html -
-    # only x.y.z version numbers are supported, whereas our versions might be x.y.z.p.
-    # bugs.python.org/issue6040#msg133094
-    from distutils.command.bdist_msi import bdist_msi
-    import inspect
-    import types
-    import re
-
-    class bdist_msi_version_hack(bdist_msi):
-        """ MSI builder requires version to be in the x.x.x format """
-        def run(self):
-            def monkey_get_version(self):
-                """ monkey patch replacement for metadata.get_version() that
-                        returns MSI compatible version string for bdist_msi
-                """
-                # get filename of the calling function
-                if inspect.stack()[1][1].endswith('bdist_msi.py'):
-                    # strip revision from version (if any), e.g. 11.0.0-r31546
-                    match = re.match(r'(\d+\.\d+\.\d+)', self.version)
-                    assert match
-                    return match.group(1)
-                else:
-                    return self.version
-
-            # monkeypatching get_version() call for DistributionMetadata
-            self.distribution.metadata.get_version = \
-                types.MethodType(monkey_get_version, self.distribution.metadata)
-            bdist_msi.run(self)
-
-    return bdist_msi_version_hack
+    def using_sectransp(self):
+        self.define_macros.append(('HAVE_CURL_SECTRANSP', 1))
+        self.define_macros.append(('HAVE_CURL_SSL', 1))
+        self.ssl_lib_detected = 'sectransp'
 
 
 def strip_pycurl_options(argv):
     if sys.platform == 'win32':
         options = [
             '--curl-dir=', '--libcurl-lib-name=', '--use-libcurl-dll',
-            '--avoid-stdio', '--with-openssl',
+            '--avoid-stdio', '--with-openssl', '--openssl-dir=',
         ]
     else:
         options = ['--openssl-dir=', '--curl-config=', '--avoid-stdio']
@@ -627,6 +602,7 @@ PRETTY_SSL_LIBS = {
     'gnutls': 'GnuTLS',
     'nss': 'NSS',
     'mbedtls': 'mbedTLS',
+    'sectransp': 'Secure Transport',
 }
 
 def get_extension(argv, split_extension_source=False):
@@ -761,12 +737,12 @@ def check_authors():
     authors_para = paras[AUTHORS_PARAGRAPH]
     authors = [author for author in authors_para.strip().split("\n")]
 
-    log = subprocess.check_output(['git', 'log', '--format=%an (%ae)'])
+    log = subprocess.check_output(['git', 'log', '--format=%an (%ae)']).decode()
     for author in log.strip().split("\n"):
         author = author.replace('@', ' at ').replace('(', '<').replace(')', '>')
         if author not in authors:
             authors.append(author)
-    authors.sort()
+    authors.sort(key=lambda s: s.lower())
     paras[AUTHORS_PARAGRAPH] = "\n".join(authors)
     f = open('AUTHORS', 'w')
     try:
@@ -852,7 +828,7 @@ libcurl, including:
 Requirements
 ------------
 
-- Python 3.5-3.9.
+- Python 3.5-3.10.
 - libcurl 7.19.0 or better.
 
 
@@ -926,22 +902,15 @@ in COPYING-LGPL_ and COPYING-MIT_ files in the source distribution.
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Internet :: File Transfer Protocol (FTP)',
         'Topic :: Internet :: WWW/HTTP',
     ],
     packages=[PY_PACKAGE],
     package_dir={ PY_PACKAGE: os.path.join('python', 'curl') },
     python_requires='>=3.5',
+    platforms='All',
 )
-
-if sys.platform == "win32":
-    setup_args['cmdclass'] = {'bdist_msi': get_bdist_msi_version_hack()}
-
-##print distutils.__version__
-if LooseVersion(distutils.__version__) > LooseVersion("1.0.1"):
-    setup_args["platforms"] = "All"
-if LooseVersion(distutils.__version__) < LooseVersion("1.0.3"):
-    setup_args["licence"] = setup_args["license"]
 
 unix_help = '''\
 PycURL Unix options:
@@ -954,6 +923,7 @@ PycURL Unix options:
  --with-nss                          libcurl is linked against NSS
  --with-mbedtls                      libcurl is linked against mbedTLS
  --with-wolfssl                      libcurl is linked against wolfSSL
+ --with-sectransp                    libcurl is linked against Secure Transport
 '''
 
 windows_help = '''\
@@ -962,6 +932,7 @@ PycURL Windows options:
  --use-libcurl-dll                     link against libcurl DLL, if not given
                                        link against libcurl statically
  --libcurl-lib-name=libcurl_imp.lib    override libcurl import library name
+ --openssl-dir=/path/to/openssl/dir    path to OpenSSL/LibreSSL/BoringSSL headers and libraries
  --with-openssl                        libcurl is linked against OpenSSL/LibreSSL/BoringSSL
  --with-ssl                            legacy alias for --with-openssl
  --link-arg=foo.lib                    also link against specified library
@@ -988,7 +959,8 @@ if __name__ == "__main__":
     elif len(sys.argv) > 1 and sys.argv[1] == 'docstrings-sources':
         gen_docstrings_sources()
     else:
-        convert_docstrings()
+        if sys.argv[1] not in ['clean'] and (not os.path.exists('src/docstrings.c') or not os.path.exists('src/docstrings.h')):
+            convert_docstrings()
 
         setup_args['data_files'] = get_data_files()
         if 'PYCURL_RELEASE' in os.environ and os.environ['PYCURL_RELEASE'].lower() in ['1', 'yes', 'true']:

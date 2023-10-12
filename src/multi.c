@@ -11,7 +11,7 @@ static void
 assert_multi_state(const CurlMultiObject *self)
 {
     assert(self != NULL);
-    assert(Py_TYPE(self) == p_CurlMulti_Type);
+    assert(PyObject_IsInstance((PyObject *) self, (PyObject *) p_CurlMulti_Type) == 1);
 #ifdef WITH_THREAD
     if (self->state != NULL) {
         assert(self->multi_handle != NULL);
@@ -51,12 +51,12 @@ do_multi_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
     CurlMultiObject *self;
     int *ptr;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "", empty_keywords)) {
+    if (subtype == p_CurlMulti_Type && !PyArg_ParseTupleAndKeywords(args, kwds, "", empty_keywords)) {
         return NULL;
     }
 
     /* Allocate python curl-multi object */
-    self = (CurlMultiObject *) p_CurlMulti_Type->tp_alloc(p_CurlMulti_Type, 0);
+    self = (CurlMultiObject *) subtype->tp_alloc(subtype, 0);
     if (!self) {
         return NULL;
     }
@@ -94,11 +94,11 @@ util_multi_close(CurlMultiObject *self)
     
     if (self->multi_handle != NULL) {
         CURLM *multi_handle = self->multi_handle;
-        self->multi_handle = NULL;
         /* Allow threads because callbacks can be invoked */
         PYCURL_BEGIN_ALLOW_THREADS
         curl_multi_cleanup(multi_handle);
         PYCURL_END_ALLOW_THREADS
+        self->multi_handle = NULL;
     }
 }
 
@@ -117,7 +117,7 @@ PYCURL_INTERNAL void
 do_multi_dealloc(CurlMultiObject *self)
 {
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self);
+    CPy_TRASHCAN_BEGIN(self, do_multi_dealloc);
 
     util_multi_xdecref(self);
     util_multi_close(self);
@@ -127,7 +127,7 @@ do_multi_dealloc(CurlMultiObject *self)
     }
 
     CurlMulti_Type.tp_free(self);
-    Py_TRASHCAN_SAFE_END(self);
+    CPy_TRASHCAN_END(self);
 }
 
 
@@ -183,8 +183,12 @@ multi_socket_callback(CURL *easy,
 
     /* acquire thread */
     self = (CurlMultiObject *)userp;
-    if (!PYCURL_ACQUIRE_THREAD_MULTI())
+    if (!PYCURL_ACQUIRE_THREAD_MULTI()) {
+        PyGILState_STATE tmp_warn_state = PyGILState_Ensure();
+        PyErr_WarnEx(PyExc_RuntimeWarning, "multi_socket_callback failed to acquire thread", 1);
+        PyGILState_Release(tmp_warn_state);
         return 0;
+    }
 
     /* check args */
     if (self->s_cb == NULL)
@@ -232,8 +236,12 @@ multi_timer_callback(CURLM *multi,
 
     /* acquire thread */
     self = (CurlMultiObject *)userp;
-    if (!PYCURL_ACQUIRE_THREAD_MULTI())
+    if (!PYCURL_ACQUIRE_THREAD_MULTI()) {
+        PyGILState_STATE tmp_warn_state = PyGILState_Ensure();
+        PyErr_WarnEx(PyExc_RuntimeWarning, "multi_timer_callback failed to acquire thread", 1);
+        PyGILState_Release(tmp_warn_state);
         return ret;
+    }
 
     /* check args */
     if (self->t_cb == NULL)
@@ -407,6 +415,34 @@ do_multi_setopt_callable(CurlMultiObject *self, int option, PyObject *obj)
 
 
 static PyObject *
+do_multi_setopt_none(CurlMultiObject *self, int option, PyObject *obj)
+{
+    switch(option) {
+#ifdef HAVE_CURL_7_30_0_PIPELINE_OPTS
+    case CURLMOPT_PIPELINING_SITE_BL:
+    case CURLMOPT_PIPELINING_SERVER_BL:
+        curl_multi_setopt(self->multi_handle, option, NULL);
+        break;
+#endif
+    case CURLMOPT_SOCKETFUNCTION:
+        curl_multi_setopt(self->multi_handle, CURLMOPT_SOCKETFUNCTION, NULL);
+        curl_multi_setopt(self->multi_handle, CURLMOPT_SOCKETDATA, NULL);
+        Py_CLEAR(self->s_cb);
+        break;
+    case CURLMOPT_TIMERFUNCTION:
+        curl_multi_setopt(self->multi_handle, CURLMOPT_TIMERFUNCTION, NULL);
+        curl_multi_setopt(self->multi_handle, CURLMOPT_TIMERDATA, NULL);
+        Py_CLEAR(self->t_cb);
+        break;
+    default:
+        PyErr_SetString(PyExc_TypeError, "unsetting is not supported for this option");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
 do_multi_setopt(CurlMultiObject *self, PyObject *args)
 {
     int option, which;
@@ -424,6 +460,11 @@ do_multi_setopt(CurlMultiObject *self, PyObject *args)
         goto error;
     if (option % 10000 >= MOPTIONS_SIZE)
         goto error;
+
+    /* Handle unsetting of options */
+    if (obj == Py_None) {
+        return do_multi_setopt_none(self, option, obj);
+    }
 
     /* Handle the case of integer arguments */
     if (PyInt_Check(obj)) {
@@ -797,7 +838,7 @@ do_multi_info_read(CurlMultiObject *self, PyObject *args)
             Py_DECREF(ok_list);
             CURLERROR_MSG("Unable to fetch curl handle from curl object");
         }
-        assert(Py_TYPE(co) == p_Curl_Type);
+        assert(PyObject_IsInstance((PyObject *) co, (PyObject *) p_Curl_Type) == 1);
         if (msg->msg != CURLMSG_DONE) {
             /* FIXME: what does this mean ??? */
         }

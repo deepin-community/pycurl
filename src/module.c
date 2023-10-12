@@ -28,6 +28,8 @@ PYCURL_INTERNAL char *g_pycurl_useragent = NULL;
 /* Type objects */
 PYCURL_INTERNAL PyObject *ErrorObject = NULL;
 PYCURL_INTERNAL PyTypeObject *p_Curl_Type = NULL;
+PYCURL_INTERNAL PyTypeObject *p_CurlSlist_Type = NULL;
+PYCURL_INTERNAL PyTypeObject *p_CurlHttppost_Type = NULL;
 PYCURL_INTERNAL PyTypeObject *p_CurlMulti_Type = NULL;
 PYCURL_INTERNAL PyTypeObject *p_CurlShare_Type = NULL;
 #ifdef HAVE_CURL_7_19_6_OPTS
@@ -374,6 +376,11 @@ initpycurl(void)
                 case CURLSSLBACKEND_NSS:
                 case CURLSSLBACKEND_WOLFSSL:
                 case CURLSSLBACKEND_MBEDTLS:
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 64, 1)
+                case CURLSSLBACKEND_SECURETRANSPORT:
+#else
+                case CURLSSLBACKEND_DARWINSSL:
+#endif
                     runtime_supported_backend_found = 1;
                     break;
                 default:
@@ -404,6 +411,8 @@ initpycurl(void)
         runtime_ssl_lib = "nss";
     } else if (!strncmp(vi->ssl_version, "mbedTLS/", 8)) {
         runtime_ssl_lib = "mbedtls";
+    } else if (!strncmp(vi->ssl_version, "Secure Transport", 16)) {
+        runtime_ssl_lib = "secure-transport";
     } else {
         runtime_ssl_lib = "none/other";
     }
@@ -416,9 +425,13 @@ initpycurl(void)
     /* Initialize the type of the new type objects here; doing it here
      * is required for portability to Windows without requiring C++. */
     p_Curl_Type = &Curl_Type;
+    p_CurlSlist_Type = &CurlSlist_Type;
+    p_CurlHttppost_Type = &CurlHttppost_Type;
     p_CurlMulti_Type = &CurlMulti_Type;
     p_CurlShare_Type = &CurlShare_Type;
     Py_SET_TYPE(&Curl_Type, &PyType_Type);
+    Py_SET_TYPE(&CurlSlist_Type, &PyType_Type);
+    Py_SET_TYPE(&CurlHttppost_Type, &PyType_Type);
     Py_SET_TYPE(&CurlMulti_Type, &PyType_Type);
     Py_SET_TYPE(&CurlShare_Type, &PyType_Type);
 
@@ -426,11 +439,18 @@ initpycurl(void)
     if (PyType_Ready(&Curl_Type) < 0)
         goto error;
 
+    if (PyType_Ready(&CurlSlist_Type) < 0)
+        goto error;
+
+    if (PyType_Ready(&CurlHttppost_Type) < 0)
+        goto error;
+
     if (PyType_Ready(&CurlMulti_Type) < 0)
         goto error;
 
     if (PyType_Ready(&CurlShare_Type) < 0)
         goto error;
+
 
 #if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&curlmodule);
@@ -1057,8 +1077,18 @@ initpycurl(void)
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 45, 0)
     insint_c(d, "DEFAULT_PROTOCOL", CURLOPT_DEFAULT_PROTOCOL);
 #endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 61, 0)
+    insint_c(d, "TLS13_CIPHERS", CURLOPT_TLS13_CIPHERS);
+    insint_c(d, "PROXY_TLS13_CIPHERS", CURLOPT_PROXY_TLS13_CIPHERS);
+#endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 62, 0)
     insint_c(d, "DOH_URL", CURLOPT_DOH_URL);
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 64, 0)
+    insint_c(d, "HTTP09_ALLOWED", CURLOPT_HTTP09_ALLOWED);
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 80, 0)
+    insint_c(d, "MAXLIFETIME_CONN", CURLOPT_MAXLIFETIME_CONN);
 #endif
 
     insint_m(d, "M_TIMERFUNCTION", CURLMOPT_TIMERFUNCTION);
@@ -1105,6 +1135,9 @@ initpycurl(void)
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 49, 0)
     insint_c(d, "CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE", CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
     insint_c(d, "TCP_FASTOPEN", CURLOPT_TCP_FASTOPEN);
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 66, 0)
+    insint_c(d, "CURL_HTTP_VERSION_3", CURL_HTTP_VERSION_3);
 #endif
     insint_c(d, "CURL_HTTP_VERSION_LAST", CURL_HTTP_VERSION_LAST);
 
@@ -1429,6 +1462,9 @@ initpycurl(void)
     insint_s(d, "LOCK_DATA_SSL_SESSION", CURL_LOCK_DATA_SSL_SESSION);
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 57, 0)
     insint_s(d, "LOCK_DATA_CONNECT", CURL_LOCK_DATA_CONNECT);
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 61, 0)
+    insint_s(d, "LOCK_DATA_PSL", CURL_LOCK_DATA_PSL);
 #endif
 
     /* Initialize callback locks if ssl is enabled */

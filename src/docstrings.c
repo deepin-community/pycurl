@@ -24,6 +24,30 @@ references to it, but can also be called explicitly.\n\
 .. _curl_easy_cleanup:\n\
     https://curl.haxx.se/libcurl/c/curl_easy_cleanup.html";
 
+PYCURL_INTERNAL const char curl_duphandle_doc[] = "duphandle() -> Curl\n\
+\n\
+Clone a curl handle. This function will return a new curl handle,\n\
+a duplicate, using all the options previously set in the input curl handle.\n\
+Both handles can subsequently be used independently.\n\
+\n\
+The new handle will not inherit any state information, no connections,\n\
+no SSL sessions and no cookies. It also will not inherit any share object\n\
+states or options (it will be made as if SHARE was unset).\n\
+\n\
+Corresponds to `curl_easy_duphandle`_ in libcurl.\n\
+\n\
+Example usage::\n\
+\n\
+    import pycurl\n\
+    curl = pycurl.Curl()\n\
+    curl.setopt(pycurl.URL, \"https://python.org\")\n\
+    dup = curl.duphandle()\n\
+    curl.perform()\n\
+    dup.perform()\n\
+\n\
+.. _curl_easy_duphandle:\n\
+    https://curl.se/libcurl/c/curl_easy_duphandle.html";
+
 PYCURL_INTERNAL const char curl_errstr_doc[] = "errstr() -> string\n\
 \n\
 Return the internal libcurl error buffer of this handle as a string.\n\
@@ -532,7 +556,7 @@ removes an existing and valid Curl object from the CurlMulti object.\n\
 .. _curl_multi_remove_handle:\n\
     https://curl.haxx.se/libcurl/c/curl_multi_remove_handle.html";
 
-PYCURL_INTERNAL const char multi_select_doc[] = "select([timeout]) -> number of ready file descriptors or -1 on timeout\n\
+PYCURL_INTERNAL const char multi_select_doc[] = "select([timeout]) -> number of ready file descriptors or 0 on timeout\n\
 \n\
 Returns result from doing a select() on the curl multi file descriptor\n\
 with the given timeout.\n\
@@ -552,7 +576,7 @@ Example usage::\n\
         if ret != pycurl.E_CALL_MULTI_PERFORM: break\n\
     while num_handles:\n\
         ret = m.select(1.0)\n\
-        if ret == -1:  continue\n\
+        if ret == 0:  continue\n\
         while 1:\n\
             ret, num_handles = m.perform()\n\
             if ret != pycurl.E_CALL_MULTI_PERFORM: break";

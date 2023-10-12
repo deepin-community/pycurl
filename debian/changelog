@@ -1,3 +1,94 @@
+pycurl (7.45.2-5) unstable; urgency=medium
+
+  * Fix FTBFS on hppa (Closes: #1050408)
+
+ -- Scott Talbert <swt@techie.net>  Thu, 24 Aug 2023 19:49:29 -0400
+
+pycurl (7.45.2-4) unstable; urgency=medium
+
+  * Properly clean up after build (Closes: #1047474)
+  * Update Standards-Version to 4.6.2
+
+ -- Scott Talbert <swt@techie.net>  Wed, 23 Aug 2023 23:39:23 -0400
+
+pycurl (7.45.2-3) unstable; urgency=high
+
+  * Team upload.
+  * d/p/drop_http3_test.patch: Fix test failure related to http3
+  * Urgency is set to high to unblock the latest curl 7.88.1-1.
+
+ -- Samuel Henrique <samueloph@debian.org>  Tue, 21 Feb 2023 19:27:36 +0000
+
+pycurl (7.45.2-2) unstable; urgency=medium
+
+  * Install python3-setuptools to fix autopkgtests
+
+ -- Scott Talbert <swt@techie.net>  Wed, 21 Dec 2022 10:19:25 -0500
+
+pycurl (7.45.2-1) unstable; urgency=medium
+
+  * Update to new upstream release 7.45.2
+
+ -- Scott Talbert <swt@techie.net>  Sun, 18 Dec 2022 11:29:46 -0500
+
+pycurl (7.45.1-6) unstable; urgency=medium
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster (oldstable):
+    + Build-Depends: Drop versioned constraint on libcurl4-gnutls-dev.
+
+ -- Jelmer Vernooĳ <jelmer@debian.org>  Tue, 22 Nov 2022 02:34:44 +0000
+
+pycurl (7.45.1-5) unstable; urgency=medium
+
+  [ Debian Janitor ]
+  * Apply multi-arch hints. + python-pycurl-doc: Add Multi-Arch: foreign.
+
+ -- Jelmer Vernooĳ <jelmer@debian.org>  Mon, 21 Nov 2022 18:12:58 +0000
+
+pycurl (7.45.1-4) unstable; urgency=medium
+
+  [ Helmut Grohne ]
+  * Fix FTCBFS: (Closes: #1022960)
+    + Multiarchify python Build-Depends.
+    + Export _PYTHON_SYSCONFIGDATA_NAME.
+  * Declaratively request python3 debhelper addon.
+
+ -- Scott Talbert <swt@techie.net>  Sat, 29 Oct 2022 12:53:13 -0400
+
+pycurl (7.45.1-3) unstable; urgency=medium
+
+  * Fix FTBFS with newer setuptools (Closes: #1020052)
+
+ -- Scott Talbert <swt@techie.net>  Sun, 18 Sep 2022 16:04:13 -0400
+
+pycurl (7.45.1-2) unstable; urgency=medium
+
+  * Fix autopkgtests from trying to run a patch
+
+ -- Scott Talbert <swt@techie.net>  Wed, 03 Aug 2022 19:23:19 -0400
+
+pycurl (7.45.1-1) unstable; urgency=medium
+
+  * Update to new upstream release 7.45.1
+  * Update Standards-Version to 4.6.1
+
+ -- Scott Talbert <swt@techie.net>  Tue, 02 Aug 2022 23:02:27 -0400
+
+pycurl (7.44.1-5) unstable; urgency=medium
+
+  * Team upload.
+  * d/p/30_fix_test_for_curl_783_compat.patch: new patch to fix error message
+    check
+
+ -- Samuel Henrique <samueloph@debian.org>  Sat, 30 Apr 2022 23:08:13 +0100
+
+pycurl (7.44.1-4) unstable; urgency=medium
+
+  * Ensure tests are run with the correct Python version
+
+ -- Scott Talbert <swt@techie.net>  Thu, 17 Feb 2022 13:28:31 -0500
+
 pycurl (7.44.1-3) unstable; urgency=medium
 
   * Skip tests that require internet access (Closes: #994524)
