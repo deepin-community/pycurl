@@ -1,3 +1,10 @@
+pycurl (7.45.2-6) unstable; urgency=medium
+
+  * Team upload
+  * d/rules: Skip test_multi_socket_action and test_multi_socket_select tests
+
+ -- Samuel Henrique <samueloph@debian.org>  Fri, 20 Oct 2023 00:24:47 +0100
+
 pycurl (7.45.2-5) unstable; urgency=medium
 
   * Fix FTBFS on hppa (Closes: #1050408)
