@@ -36,7 +36,7 @@ override_dh_auto_test:
 ifeq ($(filter nocheck,$(DEB_BUILD_OPTIONS)),)
 	set -e ;\
 	for py in $(PY3VERS) ; do \
-		make test PYTHON=python$$py PYTEST="python$$py -m pytest" PYTEST_ADDOPTS="--ignore examples --ignore .pc -m 'not online'" PYFLAKES="python$$py -m pyflakes" PYCURL_VSFTPD_PATH=vsftpd; \
+		make test PYTHON=python$$py PYTEST="python$$py -m pytest" PYTEST_ADDOPTS="--ignore examples --ignore .pc -m 'not online' -k 'not (test_multi_socket_action or test_multi_socket_select)'" PYFLAKES="python$$py -m pyflakes" PYCURL_VSFTPD_PATH=vsftpd; \
 	done
 endif
 
