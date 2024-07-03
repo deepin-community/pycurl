@@ -52,7 +52,7 @@ class MultiCallbackTest(unittest.TestCase):
 
     # multi.socket_action must call both SOCKETFUNCTION and TIMERFUNCTION at
     # various points during the transfer (at least at the start and end)
-    @pytest.mark.xfail(sys.platform == 'darwin', reason='https://github.com/pycurl/pycurl/issues/729')
+    @pytest.mark.xfail(sys.platform in ['darwin', 'win32'], reason='https://github.com/pycurl/pycurl/issues/729')
     def test_multi_socket_action(self):
         self.multi.add_handle(self.easy)
         self.timer_result = None
@@ -77,7 +77,8 @@ class MultiCallbackTest(unittest.TestCase):
 
     # (mid-transfer) easy.pause(PAUSE_ALL) must call SOCKETFUNCTION to remove sockets
     # (mid-transfer) easy.pause(PAUSE_CONT) must call TIMERFUNCTION to resume
-    @pytest.mark.xfail(sys.platform == 'darwin', reason='https://github.com/pycurl/pycurl/issues/729')
+    @pytest.mark.xfail(reason='https://github.com/pycurl/pycurl/issues/729')
+    @pytest.mark.skipif(sys.platform == 'win32', reason='https://github.com/pycurl/pycurl/issues/819')
     def test_easy_pause_unpause(self):
         self.partial_transfer()
         self.socket_result = None
@@ -93,6 +94,7 @@ class MultiCallbackTest(unittest.TestCase):
 
     # (mid-transfer) easy.close() must call SOCKETFUNCTION to remove sockets
     @pytest.mark.xfail(sys.platform == 'darwin', reason='https://github.com/pycurl/pycurl/issues/729')
+    @pytest.mark.skipif(sys.platform == 'win32', reason='https://github.com/pycurl/pycurl/issues/819')
     def test_easy_close(self):
         self.partial_transfer()
         self.socket_result = None

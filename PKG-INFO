@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: pycurl
-Version: 7.45.2
+Version: 7.45.3
 Summary: PycURL -- A Python Interface To The cURL library
 Home-page: http://pycurl.io/
 Author: Kjetil Jacobsen, Markus F.X.J. Oberhumer, Oleg Pudeyev
@@ -24,6 +24,8 @@ Classifier: Programming Language :: Python :: 3.7
 Classifier: Programming Language :: Python :: 3.8
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
 Classifier: Topic :: Internet :: File Transfer Protocol (FTP)
 Classifier: Topic :: Internet :: WWW/HTTP
 Requires-Python: >=3.5
@@ -59,7 +61,7 @@ libcurl, including:
 Requirements
 ------------
 
-- Python 3.5-3.10.
+- Python 3.5-3.12.
 - libcurl 7.19.0 or better.
 
 
@@ -93,7 +95,7 @@ popular with some PycURL users.
 Bugs can be reported `via GitHub`_. Please use GitHub only for bug
 reports and direct questions to our mailing list instead.
 
-.. _curl-and-python mailing list: http://cool.haxx.se/mailman/listinfo/curl-and-python
+.. _curl-and-python mailing list: https://lists.haxx.se/listinfo/curl-and-python
 .. _Stack Overflow: http://stackoverflow.com/questions/tagged/pycurl
 .. _Mailing list archives: https://curl.haxx.se/mail/list.cgi?list=curl-and-python
 .. _via GitHub: https://github.com/pycurl/pycurl/issues

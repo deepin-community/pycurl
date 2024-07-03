@@ -1,3 +1,23 @@
+pycurl (7.45.3-2) unstable; urgency=medium
+
+  * Switch to building with openssl (Closes: #1065007)
+
+ -- Scott Talbert <swt@techie.net>  Tue, 19 Mar 2024 19:50:13 -0400
+
+pycurl (7.45.3-1) unstable; urgency=medium
+
+  * Add egg-info and docstrings files to Files-Excluded
+  * Update to new upstream release 7.45.3
+  * Skip test of broken curl functionality
+
+ -- Scott Talbert <swt@techie.net>  Wed, 28 Feb 2024 19:01:35 -0500
+
+pycurl (7.45.2-7) unstable; urgency=medium
+
+  * Skip one more test to fix FTBFS with curl 8.5.0 (Closes: #1058330)
+
+ -- Scott Talbert <swt@techie.net>  Tue, 12 Dec 2023 20:32:00 -0500
+
 pycurl (7.45.2-6) unstable; urgency=medium
 
   * Team upload

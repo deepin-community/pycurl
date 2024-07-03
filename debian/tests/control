@@ -3,7 +3,7 @@ Test-Command: python3 -c "import curl; print(curl.__file__)"
 Tests: livetest.sh
 Depends: build-essential,
          ca-certificates,
-         libcurl4-gnutls-dev,
+         libcurl4-openssl-dev,
          python3-all,
          python3-bottle,
          python3-flaky,
