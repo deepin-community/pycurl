@@ -1,0 +1,14 @@
+Description: Skip a test of functionality broken in curl
+Author: Scott Talbert <swt@techie.net>
+Forwarded: not-needed
+
+--- a/tests/option_constants_test.py
++++ b/tests/option_constants_test.py
+@@ -462,7 +462,6 @@ class OptionConstantsTest(unittest.TestC
+     @util.only_ssl_backends('openssl', 'gnutls', 'schannel')
+     def test_proxy_tlsauth(self):
+         curl = pycurl.Curl()
+-        curl.setopt(curl.PROXY_TLSAUTH_TYPE, "SRP")
+         curl.setopt(curl.PROXY_TLSAUTH_USERNAME, "test")
+         curl.setopt(curl.PROXY_TLSAUTH_PASSWORD, "test")
+         curl.close()

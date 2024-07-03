@@ -5,10 +5,10 @@ Maintainer: Debian Python Team <team+python@tracker.debian.org>
 Uploaders: Scott Talbert <swt@techie.net>
 Build-Depends: debhelper-compat (= 13),
                dh-sequence-python3,
-               libcurl4-gnutls-dev,
-               libgnutls28-dev,
+               libcurl4-openssl-dev,
                libpython3-all-dev,
                libssh2-1-dev,
+               libssl-dev,
                python3-all-dev:any,
                python3-bottle <!nocheck>,
                python3-flaky <!nocheck>,
@@ -27,16 +27,16 @@ Rules-Requires-Root: no
 
 Package: python3-pycurl
 Architecture: any
-Suggests: libcurl4-gnutls-dev,
+Suggests: libcurl4-openssl-dev,
           python-pycurl-doc,
 Depends: ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends},
 Description: Python bindings to libcurl (Python 3)
  This module provides the Python bindings to libcurl. Please refer to
- the libcurl documentation available in libcurl4-gnutls-dev Debian package.
+ the libcurl documentation available in libcurl4-openssl-dev Debian package.
  .
- NOTE: the SSL support is provided by GnuTLS.
+ NOTE: the SSL support is provided by OpenSSL.
  .
  This package contains PyCURL for Python 3.
 
@@ -48,8 +48,8 @@ Depends: ${misc:Depends},
 Multi-Arch: foreign
 Description: Python bindings to libcurl (documentation)
  This module provides the Python bindings to libcurl. Please refer to
- the libcurl documentation available in libcurl4-gnutls-dev Debian package.
+ the libcurl documentation available in libcurl4-openssl-dev Debian package.
  .
- NOTE: the SSL support is provided by GnuTLS.
+ NOTE: the SSL support is provided by OpenSSL.
  .
  This package contains the PyCURL documentation.

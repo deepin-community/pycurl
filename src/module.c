@@ -94,7 +94,7 @@ do_global_init(PyObject *dummy, PyObject *args)
 
 
 PYCURL_INTERNAL PyObject *
-do_global_cleanup(PyObject *dummy)
+do_global_cleanup(PyObject *dummy, PyObject *Py_UNUSED(ignored))
 {
     UNUSED(dummy);
     curl_global_cleanup();
@@ -375,6 +375,7 @@ initpycurl(void)
                 case CURLSSLBACKEND_GNUTLS:
                 case CURLSSLBACKEND_NSS:
                 case CURLSSLBACKEND_WOLFSSL:
+                case CURLSSLBACKEND_SCHANNEL:
                 case CURLSSLBACKEND_MBEDTLS:
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 64, 1)
                 case CURLSSLBACKEND_SECURETRANSPORT:
@@ -413,6 +414,8 @@ initpycurl(void)
         runtime_ssl_lib = "mbedtls";
     } else if (!strncmp(vi->ssl_version, "Secure Transport", 16)) {
         runtime_ssl_lib = "secure-transport";
+    } else if (!strncmp(vi->ssl_version, "Schannel", 8)) {
+        runtime_ssl_lib = "schannel";
     } else {
         runtime_ssl_lib = "none/other";
     }
@@ -506,6 +509,7 @@ initpycurl(void)
     insstr_modinit(d, "version", g_pycurl_useragent);
     insint(d, "COMPILE_PY_VERSION_HEX", PY_VERSION_HEX);
     insint(d, "COMPILE_LIBCURL_VERSION_NUM", LIBCURL_VERSION_NUM);
+    insstr_modinit(d, "COMPILE_SSL_LIB", COMPILE_SSL_LIB);
 
     /* Types */
     insobj2_modinit(d, NULL, "Curl", (PyObject *) p_Curl_Type);
@@ -818,6 +822,18 @@ initpycurl(void)
 #endif
     insint_c(d, "HTTPPOST", CURLOPT_HTTPPOST);
     insint_c(d, "SSLCERT", CURLOPT_SSLCERT);
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 71, 0)
+    insint_c(d, "SSLCERT_BLOB", CURLOPT_SSLCERT_BLOB);
+    insint_c(d, "SSLKEY_BLOB", CURLOPT_SSLKEY_BLOB);
+    insint_c(d, "PROXY_SSLCERT_BLOB", CURLOPT_PROXY_SSLCERT_BLOB);
+    insint_c(d, "PROXY_SSLKEY_BLOB", CURLOPT_PROXY_SSLKEY_BLOB);
+    insint_c(d, "ISSUERCERT_BLOB", CURLOPT_ISSUERCERT_BLOB);
+    insint_c(d, "PROXY_ISSUERCERT_BLOB", CURLOPT_PROXY_ISSUERCERT_BLOB);
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 77, 0)
+    insint_c(d, "CAINFO_BLOB", CURLOPT_CAINFO_BLOB);
+    insint_c(d, "PROXY_CAINFO_BLOB", CURLOPT_PROXY_CAINFO_BLOB);
+#endif
     insint_c(d, "SSLCERTPASSWD", CURLOPT_SSLCERTPASSWD);
     insint_c(d, "CRLF", CURLOPT_CRLF);
     insint_c(d, "QUOTE", CURLOPT_QUOTE);
@@ -967,13 +983,28 @@ initpycurl(void)
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 52, 0)
     insint_c(d, "PROXY_CAPATH", CURLOPT_PROXY_CAPATH);
     insint_c(d, "PROXY_CAINFO", CURLOPT_PROXY_CAINFO);
+    insint_c(d, "PROXY_CRLFILE", CURLOPT_PROXY_CRLFILE);
     insint_c(d, "PRE_PROXY", CURLOPT_PRE_PROXY);
     insint_c(d, "PROXY_SSLCERT", CURLOPT_PROXY_SSLCERT);
     insint_c(d, "PROXY_SSLCERTTYPE", CURLOPT_PROXY_SSLCERTTYPE);
     insint_c(d, "PROXY_SSLKEY", CURLOPT_PROXY_SSLKEY);
     insint_c(d, "PROXY_SSLKEYTYPE", CURLOPT_PROXY_SSLKEYTYPE);
+    insint_c(d, "PROXY_KEYPASSWD", CURLOPT_PROXY_KEYPASSWD);
     insint_c(d, "PROXY_SSL_VERIFYPEER", CURLOPT_PROXY_SSL_VERIFYPEER);
     insint_c(d, "PROXY_SSL_VERIFYHOST", CURLOPT_PROXY_SSL_VERIFYHOST);
+    insint_c(d, "PROXY_PINNEDPUBLICKEY", CURLOPT_PROXY_PINNEDPUBLICKEY);
+    insint_c(d, "PROXY_SSLVERSION", CURLOPT_PROXY_SSLVERSION);
+    insint_c(d, "PROXY_SSL_CIPHER_LIST", CURLOPT_PROXY_SSL_CIPHER_LIST);
+    insint_c(d, "PROXY_SSL_OPTIONS", CURLOPT_PROXY_SSL_OPTIONS);
+    insint_c(d, "PROXY_TLSAUTH_TYPE", CURLOPT_PROXY_TLSAUTH_TYPE);
+    insint_c(d, "PROXY_TLSAUTH_USERNAME", CURLOPT_PROXY_TLSAUTH_USERNAME);
+    insint_c(d, "PROXY_TLSAUTH_PASSWORD", CURLOPT_PROXY_TLSAUTH_PASSWORD);
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 71, 0)
+    insint_c(d, "PROXY_ISSUERCERT", CURLOPT_PROXY_ISSUERCERT);
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 55, 0)
+    insint_c(d, "REQUEST_TARGET", CURLOPT_REQUEST_TARGET);
 #endif
     insint_c(d, "COPYPOSTFIELDS", CURLOPT_COPYPOSTFIELDS);
     insint_c(d, "SSH_HOST_PUBLIC_KEY_MD5", CURLOPT_SSH_HOST_PUBLIC_KEY_MD5);
@@ -1086,6 +1117,9 @@ initpycurl(void)
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 64, 0)
     insint_c(d, "HTTP09_ALLOWED", CURLOPT_HTTP09_ALLOWED);
+#endif
+#if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 75, 0)
+    insint_c(d, "AWS_SIGV4", CURLOPT_AWS_SIGV4);
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 80, 0)
     insint_c(d, "MAXLIFETIME_CONN", CURLOPT_MAXLIFETIME_CONN);
@@ -1409,28 +1443,37 @@ initpycurl(void)
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 52, 0)
     insint(d, "CURL_VERSION_HTTPS_PROXY", CURL_VERSION_HTTPS_PROXY);
+    insint(d, "VERSION_HTTPS_PROXY", CURL_VERSION_HTTPS_PROXY);
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 56, 0)
     insint(d, "CURL_VERSION_MULTI_SSL", CURL_VERSION_MULTI_SSL);
+    insint(d, "VERSION_MULTI_SSL", CURL_VERSION_MULTI_SSL);
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 57, 0)
     insint(d, "CURL_VERSION_BROTLI", CURL_VERSION_BROTLI);
+    insint(d, "VERSION_BROTLI", CURL_VERSION_BROTLI);
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 64, 1)
     insint(d, "CURL_VERSION_ALTSVC", CURL_VERSION_ALTSVC);
+    insint(d, "VERSION_ALTSVC", CURL_VERSION_ALTSVC);
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 66, 0)
     insint(d, "CURL_VERSION_HTTP3", CURL_VERSION_HTTP3);
+    insint(d, "VERSION_HTTP3", CURL_VERSION_HTTP3);
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 72, 0)
     insint(d, "CURL_VERSION_UNICODE", CURL_VERSION_UNICODE);
     insint(d, "CURL_VERSION_ZSTD", CURL_VERSION_ZSTD);
+    insint(d, "VERSION_UNICODE", CURL_VERSION_UNICODE);
+    insint(d, "VERSION_ZSTD", CURL_VERSION_ZSTD);
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 74, 0)
     insint(d, "CURL_VERSION_HSTS", CURL_VERSION_HSTS);
+    insint(d, "VERSION_HSTS", CURL_VERSION_HSTS);
 #endif
 #if LIBCURL_VERSION_NUM >= MAKE_LIBCURL_VERSION(7, 76, 0)
     insint(d, "CURL_VERSION_GSASL", CURL_VERSION_GSASL);
+    insint(d, "VERSION_GSASL", CURL_VERSION_GSASL);
 #endif
 
     /**

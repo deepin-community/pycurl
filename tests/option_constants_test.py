@@ -269,6 +269,46 @@ class OptionConstantsTest(unittest.TestCase):
         curl.setopt(curl.CAPATH, '/bogus-capath')
         curl.close()
 
+    @util.min_libcurl(7, 77, 0)
+    @util.only_ssl_backends('openssl')
+    def test_cainfo_blob(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.CAINFO_BLOB, 'bogus-cainfo-blob-as-str')
+        curl.setopt(curl.CAINFO_BLOB, None)
+        curl.setopt(curl.CAINFO_BLOB, b'bogus-cainfo-blob-as-bytes')
+        curl.unsetopt(curl.CAINFO_BLOB)
+        curl.close()
+
+    @util.min_libcurl(7, 71, 0)
+    @util.only_ssl
+    def test_sslcert_blob(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.SSLCERT_BLOB, 'bogus-sslcert-blob-as-str')
+        curl.setopt(curl.SSLCERT_BLOB, None)
+        curl.setopt(curl.SSLCERT_BLOB, b'bogus-sslcert-blob-as-bytes')
+        curl.unsetopt(curl.SSLCERT_BLOB)
+        curl.close()
+
+    @util.min_libcurl(7, 71, 0)
+    @util.only_ssl
+    def test_sslkey_blob(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.SSLKEY_BLOB, 'bogus-sslkey-blob-as-str')
+        curl.setopt(curl.SSLKEY_BLOB, None)
+        curl.setopt(curl.SSLKEY_BLOB, b'bogus-sslkey-blob-as-bytes')
+        curl.unsetopt(curl.SSLKEY_BLOB)
+        curl.close()
+
+    @util.min_libcurl(7, 71, 0)
+    @util.only_ssl
+    def test_issuercert_blob(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.ISSUERCERT_BLOB, 'bogus-issuercert-blob-as-str')
+        curl.setopt(curl.ISSUERCERT_BLOB, None)
+        curl.setopt(curl.ISSUERCERT_BLOB, b'bogus-issuercert-blob-as-bytes')
+        curl.unsetopt(curl.ISSUERCERT_BLOB)
+        curl.close()
+
     # CURLOPT_PROXY_CAPATH was introduced in libcurl-7.52.0
     @util.min_libcurl(7, 52, 0)
     @util.only_ssl_backends('openssl', 'gnutls', 'nss')
@@ -277,11 +317,38 @@ class OptionConstantsTest(unittest.TestCase):
         curl.setopt(curl.PROXY_CAPATH, '/bogus-capath')
         curl.close()
 
+    @util.min_libcurl(7, 77, 0)
+    @util.only_ssl_backends('openssl')
+    def test_proxy_cainfo_blob(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_CAINFO_BLOB, 'bogus-cainfo-blob-as-str')
+        curl.setopt(curl.PROXY_CAINFO_BLOB, None)
+        curl.setopt(curl.PROXY_CAINFO_BLOB, b'bogus-cainfo-blob-as-bytes')
+        curl.unsetopt(curl.PROXY_CAINFO_BLOB)
+        curl.close()
+
+    @util.min_libcurl(7, 52, 0)
+    @util.only_ssl
+    def test_proxy_crlfile(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_CRLFILE, '/bogus-crlfile')
+        curl.close()
+
     @util.min_libcurl(7, 52, 0)
     @util.only_ssl
     def test_proxy_sslcert(self):
         curl = pycurl.Curl()
         curl.setopt(curl.PROXY_SSLCERT, '/bogus-sslcert')
+        curl.close()
+
+    @util.min_libcurl(7, 71, 0)
+    @util.only_ssl
+    def test_proxy_sslcert_blob(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_SSLCERT_BLOB, 'bogus-sslcert-blob-as-str')
+        curl.setopt(curl.PROXY_SSLCERT_BLOB, None)
+        curl.setopt(curl.PROXY_SSLCERT_BLOB, b'bogus-sslcert-blob-as-bytes')
+        curl.unsetopt(curl.PROXY_SSLCERT_BLOB)
         curl.close()
 
     @util.min_libcurl(7, 52, 0)
@@ -298,11 +365,38 @@ class OptionConstantsTest(unittest.TestCase):
         curl.setopt(curl.PROXY_SSLKEY, '/bogus-sslkey')
         curl.close()
 
+    @util.min_libcurl(7, 71, 0)
+    @util.only_ssl
+    def test_proxy_sslkey_blob(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_SSLKEY_BLOB, 'bogus-sslkey-blob-as-str')
+        curl.setopt(curl.PROXY_SSLKEY_BLOB, None)
+        curl.setopt(curl.PROXY_SSLKEY_BLOB, b'bogus-sslkey-blob-as-bytes')
+        curl.unsetopt(curl.PROXY_SSLKEY_BLOB)
+        curl.close()
+
     @util.min_libcurl(7, 52, 0)
     @util.only_ssl
     def test_proxy_sslkeytype(self):
         curl = pycurl.Curl()
         curl.setopt(curl.PROXY_SSLKEYTYPE, 'PEM')
+        curl.close()
+
+    @util.min_libcurl(7, 71, 0)
+    @util.only_ssl
+    def test_proxy_issuercert_blob(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_ISSUERCERT_BLOB, 'bogus-issuercert-blob-as-str')
+        curl.setopt(curl.PROXY_ISSUERCERT_BLOB, None)
+        curl.setopt(curl.PROXY_ISSUERCERT_BLOB, b'bogus-issuercert-blob-as-bytes')
+        curl.unsetopt(curl.PROXY_ISSUERCERT_BLOB)
+        curl.close()
+
+    @util.min_libcurl(7, 52, 0)
+    @util.only_ssl
+    def test_proxy_keypasswd(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_KEYPASSWD, 'secret')
         curl.close()
 
     @util.min_libcurl(7, 52, 0)
@@ -319,6 +413,67 @@ class OptionConstantsTest(unittest.TestCase):
         curl.setopt(curl.PROXY_SSL_VERIFYHOST, 2)
         curl.close()
 
+    @util.min_libcurl(7, 52, 0)
+    @util.only_ssl
+    def test_proxy_pinnedpublickey(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_PINNEDPUBLICKEY, '/etc/publickey.der')
+        curl.close()
+
+    @util.min_libcurl(7, 52, 0)
+    @util.only_ssl
+    def test_proxy_sslversion_options(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_SSLVERSION, curl.SSLVERSION_DEFAULT)
+        curl.setopt(curl.PROXY_SSLVERSION, curl.SSLVERSION_TLSv1)
+        curl.setopt(curl.PROXY_SSLVERSION, curl.SSLVERSION_TLSv1_0)
+        curl.setopt(curl.PROXY_SSLVERSION, curl.SSLVERSION_TLSv1_1)
+        curl.setopt(curl.PROXY_SSLVERSION, curl.SSLVERSION_TLSv1_2)
+        curl.close()
+ 
+    # SSLVERSION_SSLv* return CURLE_BAD_FUNCTION_ARGUMENT with curl-7.77.0
+    @util.min_libcurl(7, 52, 0)
+    @util.removed_in_libcurl(7, 77, 0)
+    @util.only_ssl
+    def test_legacy_proxy_sslversion_options(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_SSLVERSION, curl.SSLVERSION_SSLv2)
+        curl.setopt(curl.PROXY_SSLVERSION, curl.SSLVERSION_SSLv3)
+        curl.close()
+
+    @util.min_libcurl(7, 52, 0)
+    @util.only_ssl
+    def test_proxy_ssl_cipher_list(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_SSL_CIPHER_LIST, 'RC4-SHA:SHA1+DES')
+        curl.close()
+
+    @util.min_libcurl(7, 52, 0)
+    @util.only_ssl
+    def test_proxy_ssl_options(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_SSL_OPTIONS, curl.SSLOPT_ALLOW_BEAST)
+        curl.setopt(curl.PROXY_SSL_OPTIONS, curl.SSLOPT_NO_REVOKE)
+        curl.close()
+
+    # Apparently TLSAUTH_TYPE=SRP is an unknown option on appveyor
+    @util.only_unix
+    @util.min_libcurl(7, 52, 0)
+    @util.only_ssl_backends('openssl', 'gnutls', 'schannel')
+    def test_proxy_tlsauth(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_TLSAUTH_TYPE, "SRP")
+        curl.setopt(curl.PROXY_TLSAUTH_USERNAME, "test")
+        curl.setopt(curl.PROXY_TLSAUTH_PASSWORD, "test")
+        curl.close()
+
+    @util.min_libcurl(7, 71, 0)
+    @util.only_ssl
+    def test_proxy_issuercert(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.PROXY_ISSUERCERT, '/bogus-issuercert')
+        curl.close()
+
     @util.only_ssl
     def test_crlfile(self):
         curl = pycurl.Curl()
@@ -331,7 +486,7 @@ class OptionConstantsTest(unittest.TestCase):
         curl.setopt(curl.RANDOM_FILE, '/bogus-random')
         curl.close()
 
-    @util.only_ssl_backends('openssl', 'gnutls', 'secure-transport')
+    @util.only_ssl_backends('openssl', 'gnutls', 'secure-transport', 'schannel')
     def test_egdsocket(self):
         curl = pycurl.Curl()
         curl.setopt(curl.EGDSOCKET, '/bogus-egdsocket')
@@ -373,6 +528,12 @@ class OptionConstantsTest(unittest.TestCase):
         curl.setopt(curl.SSL_OPTIONS, curl.SSLOPT_NO_REVOKE)
         curl.close()
 
+    @util.min_libcurl(7, 55, 0)
+    def test_request_target_option(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.REQUEST_TARGET, '*')
+        curl.close()
+
     @util.min_libcurl(7, 64, 0)
     def test_http09_allowed_option(self):
         curl = pycurl.Curl()
@@ -380,17 +541,23 @@ class OptionConstantsTest(unittest.TestCase):
         curl.close()
 
     @util.min_libcurl(7, 61, 0)
-    @util.only_ssl_backends('openssl')
+    @util.only_ssl_backends('openssl', 'schannel')
     def test_tls13_ciphers(self):
         curl = pycurl.Curl()
         curl.setopt(curl.TLS13_CIPHERS, 'TLS_CHACHA20_POLY1305_SHA256')
         curl.close()
 
     @util.min_libcurl(7, 61, 0)
-    @util.only_ssl_backends('openssl')
+    @util.only_ssl_backends('openssl', 'schannel')
     def test_proxy_tls13_ciphers(self):
         curl = pycurl.Curl()
         curl.setopt(curl.PROXY_TLS13_CIPHERS, 'TLS_CHACHA20_POLY1305_SHA256')
+        curl.close()
+
+    @util.min_libcurl(7, 75, 0)
+    def test_aws_sigv4(self):
+        curl = pycurl.Curl()
+        curl.setopt(curl.AWS_SIGV4, 'provider1:provider2')
         curl.close()
 
 class OptionConstantsSettingTest(unittest.TestCase):
@@ -477,26 +644,27 @@ class OptionConstantsSettingTest(unittest.TestCase):
         self.curl.setopt(self.curl.HTTP_VERSION, self.curl.CURL_HTTP_VERSION_1_1)
 
     @util.min_libcurl(7, 33, 0)
-    @pytest.mark.http2
+    @util.only_http2
     def test_http_version_2_0(self):
         self.curl.setopt(self.curl.HTTP_VERSION, self.curl.CURL_HTTP_VERSION_2_0)
 
     @util.min_libcurl(7, 43, 0)
-    @pytest.mark.http2
+    @util.only_http2
     def test_http_version_2(self):
         self.curl.setopt(self.curl.HTTP_VERSION, self.curl.CURL_HTTP_VERSION_2)
 
     @util.min_libcurl(7, 47, 0)
-    @pytest.mark.http2
+    @util.only_http2
     def test_http_version_2tls(self):
         self.curl.setopt(self.curl.HTTP_VERSION, self.curl.CURL_HTTP_VERSION_2TLS)
 
     @util.min_libcurl(7, 49, 0)
-    @pytest.mark.http2
+    @util.only_http2
     def test_http_version_2prior_knowledge(self):
         self.curl.setopt(self.curl.HTTP_VERSION, self.curl.CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE)
 
     @util.min_libcurl(7, 66, 0)
+    @util.only_http3
     def test_http_version_3(self):
         self.curl.setopt(self.curl.HTTP_VERSION, self.curl.CURL_HTTP_VERSION_3)
 
@@ -514,7 +682,7 @@ class OptionConstantsSettingTest(unittest.TestCase):
     # Apparently TLSAUTH_TYPE=SRP is an unknown option on appveyor
     @util.only_unix
     @util.min_libcurl(7, 21, 4)
-    @util.only_ssl_backends('openssl', 'gnutls')
+    @util.only_ssl_backends('openssl', 'gnutls', 'schannel')
     def test_tlsauth(self):
         self.curl.setopt(self.curl.TLSAUTH_TYPE, "SRP")
         self.curl.setopt(self.curl.TLSAUTH_USERNAME, "test")
